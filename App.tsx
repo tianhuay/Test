@@ -208,7 +208,7 @@ const TopicCard: React.FC<{ topic: Topic; onClick: () => void }> = ({ topic, onC
     <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
     <span className="text-5xl filter drop-shadow-md z-10">{topic.emoji}</span>
     <div className="z-10">
-      <h3 className="text-2xl font-black mb-1 brand-font">{topic.label}</h3>
+      <h3 className="text-2xl font-black mb-1 brand-font" style={{ letterSpacing: '1.5px' }}>{topic.label}</h3>
       <p className="text-sm opacity-90 font-bold">Explore stories about {topic.promptContext}</p>
     </div>
   </motion.button>
@@ -600,12 +600,12 @@ export default function App() {
     <div className="min-h-screen bg-indigo-50/20 pb-20">
       <AnimatePresence>{appState === AppState.CELEBRATION && <CelebrationOverlay score={analysisResult?.score || 0} onComplete={() => setAppState(AppState.FEEDBACK)} />}</AnimatePresence>
       {currentUser && <Header user={currentUser} xp={xp} todayCount={todayCount} todayXp={todayXp} syncStatus={syncStatus} onShowStats={handleShowStats} onSwitchProfile={handleProfileSelect} />}
-      <main className="max-w-7xl mx-auto p-4 md:p-6 mt-4">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-4 pb-4 mt-4">
         <AnimatePresence mode="wait">
           {appState === AppState.TOPIC_SELECTION && (
             <motion.div key="topics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="text-center mb-10">
-                <h2 className="text-4xl font-black text-slate-800 mb-6 brand-font">Pick a story topic!</h2>
+                <h2 className="text-4xl font-black text-slate-800 mb-16 brand-font">Pick a story topic!</h2>
                 <div className="flex bg-white p-2 rounded-2xl border border-indigo-50 max-w-md mx-auto">
                   {(['easy', 'medium', 'challenge'] as Difficulty[]).map(d => (
                     <button key={d} onClick={() => { playClickSound(); setDifficulty(d); }} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${difficulty === d ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:bg-slate-50'}`}>{d.charAt(0).toUpperCase() + d.slice(1)}</button>
