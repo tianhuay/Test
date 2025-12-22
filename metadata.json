@@ -1,0 +1,7 @@
+{
+  "name": "Speaking Coach",
+  "description": "An engaging speaking and reading practice app for Year 5 students with AI-powered feedback.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
