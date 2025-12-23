@@ -11,6 +11,7 @@ import { playSuccessSound, playStartRecordingSound, playStopRecordingSound, play
 import { getDailyTarget, fetchUserData, getTodayDateString, resetUserData, clearOfflineMode, clearAllLocalData } from './services/storageService';
 import { incrementDailyProgress } from './services/storageService';
 import Button from './components/Button';
+import DesignSystem from './design-system/DesignSystem';
 
 // --- Sub-components ---
 
@@ -525,6 +526,10 @@ export default function App() {
 
   const handleResetApp = async () => { clearAllLocalData(); window.location.reload(); };
 
+  if (appState === AppState.DESIGN_SYSTEM) {
+    return <DesignSystem onExit={() => setAppState(AppState.PROFILE_SELECTION)} />;
+  }
+
   useEffect(() => {
     if (isRecording && useGuide && !isPaused && pacerIndex >= 0 && pacerIndex < words.length) {
       const word = words[pacerIndex];
@@ -589,6 +594,7 @@ export default function App() {
               ))}
             </div>
             <motion.button whileHover={{ opacity: 1, scale: 1.1 }} onClick={() => { playClickSound(); setIsAdminOpen(true); }} className="mt-24 opacity-30 text-slate-400 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-indigo-600 transition-all z-10 group"><Settings2 size={16} /> Admin Entrance</motion.button>
+            <motion.button whileHover={{ opacity: 1, scale: 1.1 }} onClick={() => { playClickSound(); setAppState(AppState.DESIGN_SYSTEM); }} className="mt-4 opacity-30 text-slate-400 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:text-indigo-600 transition-all z-10 group"><Wand2 size={16} /> Design System</motion.button>
             <AnimatePresence>{isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} onReset={handleResetApp} />}</AnimatePresence>
           </>
         )}

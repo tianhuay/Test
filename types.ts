@@ -7,7 +7,8 @@ export enum AppState {
   CELEBRATION = 'CELEBRATION',
   FEEDBACK = 'FEEDBACK',
   STATS = 'STATS',
-  MIC_TEST = 'MIC_TEST'
+  MIC_TEST = 'MIC_TEST',
+  DESIGN_SYSTEM = 'DESIGN_SYSTEM'
 }
 
 export type Difficulty = 'easy' | 'medium' | 'challenge';
