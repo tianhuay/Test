@@ -162,16 +162,20 @@ function makeDefaultPrefix(nodeId, fileKey) {
 }
 
 async function tryFetchVariables(fileKey, token) {
-  const endpoints = [
-    `/files/${encodeURIComponent(fileKey)}/variables/local`,
-    `/files/${encodeURIComponent(fileKey)}/variables/published`,
-    `/files/${encodeURIComponent(fileKey)}/variables`,
+  const candidates = [
+    { key: "local", endpoint: `/files/${encodeURIComponent(fileKey)}/variables/local` },
+    { key: "published", endpoint: `/files/${encodeURIComponent(fileKey)}/variables/published` },
+    { key: "legacy", endpoint: `/files/${encodeURIComponent(fileKey)}/variables` },
   ];
 
-  for (const endpoint of endpoints) {
+  const responses = {};
+  const endpointsUsed = [];
+
+  for (const candidate of candidates) {
     try {
-      const json = await requestFigmaJson({ endpoint, token });
-      return { endpoint, json };
+      const json = await requestFigmaJson({ endpoint: candidate.endpoint, token });
+      responses[candidate.key] = json;
+      endpointsUsed.push(candidate.endpoint);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (!/ 404 | 403 | 400 /.test(` ${message} `)) {
@@ -180,7 +184,19 @@ async function tryFetchVariables(fileKey, token) {
     }
   }
 
-  return null;
+  if (endpointsUsed.length === 0) {
+    return null;
+  }
+
+  return {
+    endpoint: endpointsUsed.join(", "),
+    json: {
+      error: false,
+      fileKey,
+      fetchedAt: new Date().toISOString(),
+      sources: responses,
+    },
+  };
 }
 
 async function main() {
