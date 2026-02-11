@@ -3,7 +3,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { GoogleGenAI } from "@google/genai";
 
 const DEFAULT_RULES_PATH = path.resolve(
   process.cwd(),
@@ -1321,6 +1320,16 @@ async function generateAiInsights({
     return {
       status: "skipped",
       note: "Set GEMINI_API_KEY or API_KEY to generate AI remediation summary.",
+    };
+  }
+
+  let GoogleGenAI;
+  try {
+    ({ GoogleGenAI } = await import("@google/genai"));
+  } catch {
+    return {
+      status: "skipped",
+      note: "Package @google/genai is not installed. Run `npm install` to enable AI summaries.",
     };
   }
 
