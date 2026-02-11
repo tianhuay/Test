@@ -39,10 +39,17 @@
     9999
   ],
   "layoutGrid": {
-    "base": 4
+    "base": 4,
+    "ignorePropertyPathPatterns": [
+      "absoluteBoundingBox",
+      "absoluteRenderBounds"
+    ]
   },
   "color": {
     "allowTokenValues": true,
+    "ignoreHex": [
+      "#00000000"
+    ],
     "allowedHex": [
       "#003B95",
       "#0052CC",
@@ -105,6 +112,7 @@
   },
   "severityOverrides": {
     "unknown_variable_reference": "high",
+    "unresolved_remote_variable_reference": "medium",
     "missing_variable_reference": "high",
     "color_off_brand": "high",
     "spacing_off_scale": "medium",

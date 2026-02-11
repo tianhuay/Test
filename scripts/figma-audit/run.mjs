@@ -14,6 +14,7 @@ const DEFAULT_MODEL = "gemini-2.5-flash";
 const DEFAULT_SEVERITY = {
   missing_variable_reference: "high",
   unknown_variable_reference: "high",
+  unresolved_remote_variable_reference: "medium",
   spacing_off_scale: "medium",
   radius_off_scale: "medium",
   color_off_brand: "high",
@@ -911,7 +912,14 @@ function nearestScaleValue(value, scale) {
 function buildAllowedColorSet(rules, variables) {
   const allowed = new Set();
   const configured = Array.isArray(rules?.color?.allowedHex) ? rules.color.allowedHex : [];
+  const ignored = Array.isArray(rules?.color?.ignoreHex) ? rules.color.ignoreHex : [];
   configured.forEach((hex) => {
+    const normalized = normalizeHex(hex);
+    if (normalized) {
+      allowed.add(normalized);
+    }
+  });
+  ignored.forEach((hex) => {
     const normalized = normalizeHex(hex);
     if (normalized) {
       allowed.add(normalized);
@@ -971,9 +979,13 @@ function normalizeRules(rules) {
     radiusScale: Array.isArray(rules?.radiusScale) ? rules.radiusScale : [],
     layoutGrid: {
       base: Number.isFinite(rules?.layoutGrid?.base) ? rules.layoutGrid.base : undefined,
+      ignorePropertyPathPatterns: Array.isArray(rules?.layoutGrid?.ignorePropertyPathPatterns)
+        ? rules.layoutGrid.ignorePropertyPathPatterns
+        : ["absoluteBoundingBox", "absoluteRenderBounds"],
     },
     color: {
       allowedHex: Array.isArray(rules?.color?.allowedHex) ? rules.color.allowedHex : [],
+      ignoreHex: Array.isArray(rules?.color?.ignoreHex) ? rules.color.ignoreHex : [],
       allowTokenValues: rules?.color?.allowTokenValues !== false,
     },
     typography: {
@@ -993,6 +1005,10 @@ function normalizeRules(rules) {
 
 function getSeverity(ruleId, rules) {
   return rules.severityOverrides[ruleId] ?? DEFAULT_SEVERITY[ruleId] ?? "medium";
+}
+
+function isRemoteVariableReference(variableRef) {
+  return typeof variableRef === "string" && /^VariableID:/i.test(variableRef);
 }
 
 function auditNodes(nodes, rules, variableIndex, variables) {
@@ -1038,16 +1054,21 @@ function auditNodes(nodes, rules, variableIndex, variables) {
       binding.variableIds.forEach((variableRef) => {
         const resolved = findVariableByRef(variableRef, variableIndex);
         if (!resolved) {
+          const remoteRef = isRemoteVariableReference(variableRef);
           addViolation({
-            ruleId: "unknown_variable_reference",
+            ruleId: remoteRef ? "unresolved_remote_variable_reference" : "unknown_variable_reference",
             node,
             property: binding.propertyPath,
             actual: variableRef,
-            expected: "Known variable ID/name from active token source",
+            expected: remoteRef
+              ? "Variable available from linked library collection"
+              : "Known variable ID/name from active token source",
             suggestion:
-              "Re-bind this property to a valid published variable from your current collection/mode.",
+              remoteRef
+                ? "Fetch linked library variables (published/local) and confirm this remote VariableID resolves."
+                : "Re-bind this property to a valid published variable from your current collection/mode.",
             before: `Variable ref: ${variableRef}`,
-            after: "Variable ref: <valid-token-id>",
+            after: remoteRef ? "Variable ref: <resolved-library-variable-id>" : "Variable ref: <valid-token-id>",
           });
         }
       });
@@ -1257,6 +1278,14 @@ function auditNodes(nodes, rules, variableIndex, variables) {
       const bounds = extractBounds(node.raw);
       bounds.forEach((entry) => {
         ["x", "y", "width", "height"].forEach((axis) => {
+          const propertyPath = `${entry.propertyPath}.${axis}`;
+          const shouldIgnore = rules.layoutGrid.ignorePropertyPathPatterns.some((pattern) =>
+            propertyPath.toLowerCase().includes(String(pattern).toLowerCase()),
+          );
+          if (shouldIgnore) {
+            return;
+          }
+
           const value = entry[axis];
           const remainder = Math.abs(value % gridBase);
           const offGrid = remainder > 0.01 && Math.abs(remainder - gridBase) > 0.01;
@@ -1265,7 +1294,7 @@ function auditNodes(nodes, rules, variableIndex, variables) {
             addViolation({
               ruleId: "layout_off_grid",
               node,
-              property: `${entry.propertyPath}.${axis}`,
+              property: propertyPath,
               actual: value,
               expected: `Multiple of ${gridBase}`,
               suggestion: `Snap to grid. Suggested value: ${suggested}.`,
