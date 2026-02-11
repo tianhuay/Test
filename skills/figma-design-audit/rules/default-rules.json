@@ -1,0 +1,126 @@
+{
+  "project": "Internet Banking Platform Design System",
+  "requireVariableReference": {
+    "color": true,
+    "spacing": true,
+    "radius": true,
+    "typography": true
+  },
+  "spacingScale": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20,
+    24,
+    28,
+    32,
+    40,
+    48,
+    56,
+    64
+  ],
+  "radiusScale": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    16,
+    20,
+    24,
+    9999
+  ],
+  "layoutGrid": {
+    "base": 4,
+    "ignorePropertyPathPatterns": [
+      "absoluteBoundingBox",
+      "absoluteRenderBounds"
+    ]
+  },
+  "color": {
+    "allowTokenValues": true,
+    "ignoreHex": [
+      "#00000000"
+    ],
+    "allowedHex": [
+      "#003B95",
+      "#0052CC",
+      "#0B6E4F",
+      "#D14343",
+      "#111827",
+      "#374151",
+      "#6B7280",
+      "#9CA3AF",
+      "#F3F4F6",
+      "#FFFFFF"
+    ]
+  },
+  "typography": {
+    "allowedFamilies": [
+      "Inter",
+      "Roboto",
+      "system-ui"
+    ],
+    "allowedWeights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "sizeLineHeightPairs": [
+      {
+        "fontSize": 12,
+        "lineHeight": 16
+      },
+      {
+        "fontSize": 14,
+        "lineHeight": 20
+      },
+      {
+        "fontSize": 16,
+        "lineHeight": 24
+      },
+      {
+        "fontSize": 18,
+        "lineHeight": 26
+      },
+      {
+        "fontSize": 20,
+        "lineHeight": 28
+      },
+      {
+        "fontSize": 24,
+        "lineHeight": 32
+      },
+      {
+        "fontSize": 28,
+        "lineHeight": 36
+      },
+      {
+        "fontSize": 32,
+        "lineHeight": 40
+      }
+    ]
+  },
+  "severityOverrides": {
+    "unknown_variable_reference": "high",
+    "external_variable_reference": "high",
+    "unresolved_remote_variable_reference": "medium",
+    "missing_variable_reference": "high",
+    "color_off_brand": "high",
+    "spacing_off_scale": "medium",
+    "radius_off_scale": "medium",
+    "typography_family_violation": "medium",
+    "typography_weight_violation": "medium",
+    "typography_scale_violation": "medium",
+    "layout_off_grid": "low"
+  }
+}
