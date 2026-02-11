@@ -59,6 +59,11 @@ Optional:
 
 Environment:
   GEMINI_API_KEY or API_KEY must be set for AI summaries.
+
+Outputs per run:
+  <report>.json        Detailed machine-readable findings
+  <report>.md          Human-readable audit report
+  <report>.figjam.md   FigJam-ready paste pack
 `;
 
 function parseArgs(argv) {
@@ -947,6 +952,12 @@ function escapeMarkdownCell(value) {
     .replace(/\n/g, "<br/>");
 }
 
+function toSingleLine(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizeRules(rules) {
   return {
     project: rules?.project ?? "Figma design audit",
@@ -1542,6 +1553,95 @@ function buildMarkdownReport({
   return lines.join("\n");
 }
 
+function buildFigJamPastePack({
+  reportMeta,
+  summary,
+  violations,
+  aiInsights,
+}) {
+  const lines = [];
+  const bySeverity = {
+    critical: violations.filter((entry) => entry.severity === "critical"),
+    high: violations.filter((entry) => entry.severity === "high"),
+    medium: violations.filter((entry) => entry.severity === "medium"),
+    low: violations.filter((entry) => entry.severity === "low"),
+  };
+
+  lines.push(`# FigJam Paste Pack · ${reportMeta.title}`);
+  lines.push("");
+  lines.push(`Generated: ${reportMeta.generatedAt}`);
+  lines.push(`Source report: ${reportMeta.selectionPath}`);
+  lines.push("");
+  lines.push("Paste guidance:");
+  lines.push("1. Create a FigJam board with frames: Summary, Critical+High, Medium+Low, Backlog.");
+  lines.push("2. Copy each section below into the matching frame.");
+  lines.push("3. Convert each bullet into a sticky note/card.");
+  lines.push("");
+
+  lines.push("## Summary cards");
+  lines.push("");
+  lines.push(`- [SUMMARY] Nodes audited: ${summary.nodeCount}`);
+  lines.push(`- [SUMMARY] Total violations: ${summary.violationCount}`);
+  lines.push(`- [SUMMARY] Critical: ${summary.bySeverity.critical ?? 0}`);
+  lines.push(`- [SUMMARY] High: ${summary.bySeverity.high ?? 0}`);
+  lines.push(`- [SUMMARY] Medium: ${summary.bySeverity.medium ?? 0}`);
+  lines.push(`- [SUMMARY] Low: ${summary.bySeverity.low ?? 0}`);
+
+  if (Object.keys(summary.byJourney).length > 0) {
+    lines.push("");
+    lines.push("- [SUMMARY] Most impacted journeys:");
+    Object.entries(summary.byJourney).forEach(([journey, count]) => {
+      lines.push(`  - ${journey}: ${count}`);
+    });
+  }
+
+  const pushSeveritySection = (severityLabel, entries, limit) => {
+    if (!entries.length) {
+      return;
+    }
+    lines.push("");
+    lines.push(`## ${severityLabel.toUpperCase()} findings`);
+    lines.push("");
+    entries.slice(0, limit).forEach((violation) => {
+      lines.push(`### ${violation.id} · ${violation.ruleId}`);
+      lines.push(`- Priority: ${violation.severity.toUpperCase()}`);
+      lines.push(`- Journey: ${violation.journey}`);
+      lines.push(`- Node: ${violation.nodePath}`);
+      lines.push(`- Issue: ${violation.property} is ${toSingleLine(violation.actual)}`);
+      lines.push(`- Expected: ${toSingleLine(violation.expected)}`);
+      lines.push(`- Fix: ${toSingleLine(violation.suggestion)}`);
+      lines.push(`- Before: ${toSingleLine(violation.before)}`);
+      lines.push(`- After: ${toSingleLine(violation.after)}`);
+      lines.push("");
+    });
+  };
+
+  pushSeveritySection("critical", bySeverity.critical, 50);
+  pushSeveritySection("high", bySeverity.high, 50);
+  pushSeveritySection("medium", bySeverity.medium, 50);
+  pushSeveritySection("low", bySeverity.low, 50);
+
+  lines.push("## Backlog cards");
+  lines.push("");
+  lines.push("- [BACKLOG] Track each violation ID in Jira/Linear with owner + due date.");
+  lines.push("- [BACKLOG] Re-run audit after fixes and compare severity totals.");
+
+  if (aiInsights.status === "generated") {
+    lines.push("");
+    lines.push("## AI recommended sprint cards");
+    lines.push("");
+    if (Array.isArray(aiInsights.priorityFixes) && aiInsights.priorityFixes.length > 0) {
+      aiInsights.priorityFixes.forEach((fix) => {
+        lines.push(`- [SPRINT] ${toSingleLine(fix.title)} — ${toSingleLine(fix.why)}`);
+      });
+    } else {
+      lines.push("- [SPRINT] No AI priority fixes were generated.");
+    }
+  }
+
+  return lines.join("\n");
+}
+
 function defaultReportName(selectionPath) {
   const base = path.basename(selectionPath);
   const withoutExt = base.replace(/\.[^.]+$/, "");
@@ -1560,11 +1660,13 @@ async function writeReportFiles({ outputDir, reportPrefix, report }) {
   await ensureDirectory(outputDir);
   const jsonPath = path.join(outputDir, `${reportPrefix}.json`);
   const markdownPath = path.join(outputDir, `${reportPrefix}.md`);
+  const figjamPath = path.join(outputDir, `${reportPrefix}.figjam.md`);
 
   await fs.writeFile(jsonPath, `${stableStringify(report)}\n`, "utf8");
   await fs.writeFile(markdownPath, `${report.markdown}\n`, "utf8");
+  await fs.writeFile(figjamPath, `${report.figjamMarkdown}\n`, "utf8");
 
-  return { jsonPath, markdownPath };
+  return { jsonPath, markdownPath, figjamPath };
 }
 
 async function main() {
@@ -1632,8 +1734,15 @@ async function main() {
     violations,
     aiInsights,
     markdown: "",
+    figjamMarkdown: "",
   };
   report.markdown = buildMarkdownReport({
+    reportMeta,
+    summary,
+    violations,
+    aiInsights,
+  });
+  report.figjamMarkdown = buildFigJamPastePack({
     reportMeta,
     summary,
     violations,
@@ -1642,7 +1751,7 @@ async function main() {
 
   const prefixBase = options.reportName ?? defaultReportName(options.selectionPath);
   const reportPrefix = `${prefixBase}-${timestampLabel()}`;
-  const { jsonPath, markdownPath } = await writeReportFiles({
+  const { jsonPath, markdownPath, figjamPath } = await writeReportFiles({
     outputDir: options.outputDir,
     reportPrefix,
     report,
@@ -1653,6 +1762,7 @@ async function main() {
   process.stdout.write(`Violations: ${summary.violationCount}\n`);
   process.stdout.write(`JSON report: ${jsonPath}\n`);
   process.stdout.write(`Markdown report: ${markdownPath}\n`);
+  process.stdout.write(`FigJam paste pack: ${figjamPath}\n`);
 }
 
 main().catch((error) => {

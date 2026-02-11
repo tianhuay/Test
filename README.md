@@ -40,7 +40,9 @@ npm run figma:audit -- \
 ```
 
 Outputs are generated in `reports/figma-audit` as both JSON and Markdown.
+Each run also produces a FigJam-ready paste pack (`*.figjam.md`).
 
 See:
 - `docs/FIGMA_AI_AUDIT_CAPABILITY.md`
+- `docs/REMOTE_MCP_HANDOFF.md`
 - `skills/figma-design-audit/SKILL.md`

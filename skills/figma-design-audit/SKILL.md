@@ -64,6 +64,13 @@ npm run figma:audit -- --selection ./inputs/login-selection.json --no-ai
   - violation table
   - before/after fix snippets
   - optional AI remediation priorities
+- `*.figjam.md` FigJam-ready paste pack
+
+To publish in FigJam quickly:
+
+1. Open the `*.figjam.md` file from the audit output.
+2. Copy sections into FigJam frames.
+3. Convert bullets into sticky notes/cards.
 
 ## Prompt snippets for MCP extraction
 

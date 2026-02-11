@@ -104,6 +104,7 @@ For each run:
 
 - `reports/figma-audit/<report>-<timestamp>.json`
 - `reports/figma-audit/<report>-<timestamp>.md`
+- `reports/figma-audit/<report>-<timestamp>.figjam.md`
 
 Markdown includes:
 
@@ -113,6 +114,12 @@ Markdown includes:
 - detailed violations table
 - before/after fix snippets
 - optional AI remediation summary
+
+FigJam paste pack includes:
+
+- summary cards
+- severity-grouped finding cards
+- backlog and sprint card suggestions
 
 ## Details needed from you for production rollout
 
@@ -130,6 +137,12 @@ Please share:
    - what should be considered critical vs high in your release gates
 6. **Preferred report destination**
    - markdown in repo, Jira attachment, Confluence, or another system
+
+If you do not have a severity policy yet, use the baseline in `default-rules.json` and tune after 1-2 audit cycles.
+
+## Remote MCP handoff details
+
+See `docs/REMOTE_MCP_HANDOFF.md` for the exact payloads and link formats to provide.
 
 ## Security and compliance notes for banking products
 
