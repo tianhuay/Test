@@ -118,6 +118,7 @@ Then run:
 npm run figma:audit -- \
   --selection ./inputs/figma/dashboard-selection.json \
   --variables ./inputs/figma/dashboard-variables.json \
+  --allowed-variables ./inputs/figma/design-system-variables.json \
   --report-name dashboard
 ```
 

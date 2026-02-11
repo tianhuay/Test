@@ -14,6 +14,7 @@ const DEFAULT_MODEL = "gemini-2.5-flash";
 const DEFAULT_SEVERITY = {
   missing_variable_reference: "high",
   unknown_variable_reference: "high",
+  external_variable_reference: "high",
   unresolved_remote_variable_reference: "medium",
   spacing_off_scale: "medium",
   radius_off_scale: "medium",
@@ -49,6 +50,8 @@ Required:
 
 Optional:
   --variables <path>      JSON or pasted MCP output for variable definitions
+  --allowed-variables <path>
+                          Variable JSON for approved library allow-list enforcement
   --rules <path>          Rules JSON (default: skills/figma-design-audit/rules/default-rules.json)
   --output-dir <path>     Output directory for report files (default: reports/figma-audit)
   --report-name <name>    Report filename prefix (default: derived from selection filename)
@@ -110,6 +113,9 @@ function parseArgs(argv) {
         break;
       case "variables":
         options.variablesPath = resolvePath(value);
+        break;
+      case "allowed-variables":
+        options.allowedVariablesPath = resolvePath(value);
         break;
       case "rules":
         options.rulesPath = resolvePath(value);
@@ -410,6 +416,7 @@ function collectVariables(payload) {
     }
 
     const id = asString(value.id ?? value.variableId ?? value.key);
+    const key = asString(value.key);
     const name = asString(value.name ?? value.variableName);
     const resolvedType = asString(value.resolvedType ?? value.valueType ?? value.type);
     const joinedPath = keyPath.join(".").toLowerCase();
@@ -429,6 +436,7 @@ function collectVariables(payload) {
         dedupe.add(dedupeKey);
         variables.push({
           id,
+          key,
           name,
           resolvedType,
           value: normalizedValue,
@@ -453,17 +461,21 @@ function collectVariables(payload) {
 function buildVariableIndex(variables) {
   const byId = new Map();
   const byName = new Map();
+  const byKey = new Map();
 
   variables.forEach((variable) => {
     if (variable.id) {
       byId.set(variable.id, variable);
+    }
+    if (variable.key) {
+      byKey.set(variable.key.toLowerCase(), variable);
     }
     if (variable.name) {
       byName.set(variable.name.toLowerCase(), variable);
     }
   });
 
-  return { byId, byName };
+  return { byId, byName, byKey };
 }
 
 function isNodeLike(entry) {
@@ -856,11 +868,31 @@ function inferJourney(nodePath) {
   return firstSegment || "unknown";
 }
 
+function parseVariableRefSourceKey(variableRef) {
+  if (typeof variableRef !== "string") {
+    return undefined;
+  }
+  const match = variableRef.match(/^VariableID:([^/]+)(?:\/.*)?$/i);
+  return match ? match[1] : undefined;
+}
+
 function findVariableByRef(variableRef, variableIndex) {
   if (!variableRef) {
     return undefined;
   }
-  return variableIndex.byId.get(variableRef) ?? variableIndex.byName.get(variableRef.toLowerCase());
+
+  const directMatch =
+    variableIndex.byId.get(variableRef) ?? variableIndex.byName.get(variableRef.toLowerCase());
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const sourceKey = parseVariableRefSourceKey(variableRef);
+  if (sourceKey) {
+    return variableIndex.byKey.get(sourceKey.toLowerCase());
+  }
+
+  return undefined;
 }
 
 function hasVariableReference(boundEntries, propertyType, propertyPath, variableIndex) {
@@ -1011,7 +1043,109 @@ function isRemoteVariableReference(variableRef) {
   return typeof variableRef === "string" && /^VariableID:/i.test(variableRef);
 }
 
-function auditNodes(nodes, rules, variableIndex, variables) {
+function collectAllowedVariableReferences(payload) {
+  const ids = new Set();
+  const sourceKeys = new Set();
+  const seenObjects = new WeakSet();
+
+  const addSourceKey = (value) => {
+    if (typeof value === "string" && value.trim()) {
+      sourceKeys.add(value.trim().toLowerCase());
+    }
+  };
+
+  const addVariableId = (value) => {
+    if (typeof value !== "string") {
+      return;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+    if (/^VariableID:/i.test(trimmed)) {
+      ids.add(trimmed);
+      const sourceKey = parseVariableRefSourceKey(trimmed);
+      if (sourceKey) {
+        addSourceKey(sourceKey);
+      }
+    }
+  };
+
+  const walk = (value) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === "string") {
+      addVariableId(value);
+      return;
+    }
+
+    if (typeof value !== "object") {
+      return;
+    }
+    if (seenObjects.has(value)) {
+      return;
+    }
+    seenObjects.add(value);
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => walk(entry));
+      return;
+    }
+
+    addVariableId(value.id);
+    addVariableId(value.variableId);
+    if (typeof value.key === "string") {
+      addSourceKey(value.key);
+    }
+    if (Array.isArray(value.variableIds)) {
+      value.variableIds.forEach((entry) => addVariableId(entry));
+    }
+
+    Object.values(value).forEach((nested) => walk(nested));
+  };
+
+  walk(payload);
+
+  return {
+    ids,
+    sourceKeys,
+  };
+}
+
+function isAllowedVariableReference(variableRef, resolvedVariable, allowList) {
+  if (!allowList) {
+    return true;
+  }
+
+  if (typeof variableRef === "string") {
+    if (allowList.ids.has(variableRef)) {
+      return true;
+    }
+    const sourceKey = parseVariableRefSourceKey(variableRef);
+    if (sourceKey && allowList.sourceKeys.has(sourceKey.toLowerCase())) {
+      return true;
+    }
+  }
+
+  if (resolvedVariable) {
+    if (resolvedVariable.id && allowList.ids.has(resolvedVariable.id)) {
+      return true;
+    }
+    if (resolvedVariable.key && allowList.sourceKeys.has(resolvedVariable.key.toLowerCase())) {
+      return true;
+    }
+    const resolvedSource = parseVariableRefSourceKey(resolvedVariable.id);
+    if (resolvedSource && allowList.sourceKeys.has(resolvedSource.toLowerCase())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function auditNodes(nodes, rules, variableIndex, variables, allowedVariableRefs) {
   const violations = [];
   let violationNumber = 1;
 
@@ -1053,6 +1187,24 @@ function auditNodes(nodes, rules, variableIndex, variables) {
     boundVariables.forEach((binding) => {
       binding.variableIds.forEach((variableRef) => {
         const resolved = findVariableByRef(variableRef, variableIndex);
+        if (
+          allowedVariableRefs &&
+          !isAllowedVariableReference(variableRef, resolved, allowedVariableRefs)
+        ) {
+          addViolation({
+            ruleId: "external_variable_reference",
+            node,
+            property: binding.propertyPath,
+            actual: variableRef,
+            expected: "Token/variable from approved Internet Banking Design System library",
+            suggestion:
+              "Replace with a variable from the approved design-system library and publish/update component bindings.",
+            before: `Variable ref: ${variableRef}`,
+            after: "Variable ref: <approved-design-system-variable-id>",
+          });
+          return;
+        }
+
         if (!resolved) {
           const remoteRef = isRemoteVariableReference(variableRef);
           addViolation({
@@ -1462,6 +1614,9 @@ function buildMarkdownReport({
     lines.push(`- Variables source: \`${reportMeta.variablesPath}\``);
   }
   lines.push(`- Rules: \`${reportMeta.rulesPath}\``);
+  if (reportMeta.allowedVariablesPath) {
+    lines.push(`- Allowed library variables: \`${reportMeta.allowedVariablesPath}\``);
+  }
   lines.push("");
 
   lines.push("## Audit summary");
@@ -1714,6 +1869,9 @@ async function main() {
 
   const selectionPayload = await readJsonInput(options.selectionPath);
   const variablesPayload = options.variablesPath ? await readJsonInput(options.variablesPath) : null;
+  const allowedVariablesPayload = options.allowedVariablesPath
+    ? await readJsonInput(options.allowedVariablesPath)
+    : null;
 
   const nodes = collectNodes(selectionPayload);
   if (nodes.length === 0) {
@@ -1734,8 +1892,11 @@ async function main() {
   });
   const variables = [...mergedVariablesMap.values()];
   const variableIndex = buildVariableIndex(variables);
+  const allowedVariableRefs = allowedVariablesPayload
+    ? collectAllowedVariableReferences(allowedVariablesPayload)
+    : null;
 
-  const violations = auditNodes(nodes, rules, variableIndex, variables);
+  const violations = auditNodes(nodes, rules, variableIndex, variables, allowedVariableRefs);
   const summary = summarizeResults(nodes, violations);
   const aiInsights = await generateAiInsights({
     enabled: options.ai,
@@ -1753,6 +1914,7 @@ async function main() {
     generatedAt,
     selectionPath: options.selectionPath,
     variablesPath: options.variablesPath,
+    allowedVariablesPath: options.allowedVariablesPath,
     rulesPath: options.rulesPath,
     model: options.model,
   };

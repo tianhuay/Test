@@ -112,6 +112,7 @@
   },
   "severityOverrides": {
     "unknown_variable_reference": "high",
+    "external_variable_reference": "high",
     "unresolved_remote_variable_reference": "medium",
     "missing_variable_reference": "high",
     "color_off_brand": "high",

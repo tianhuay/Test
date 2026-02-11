@@ -35,6 +35,7 @@ This repository now includes a reusable CLI and skill pack to audit Figma design
 npm run figma:audit -- \
   --selection ./inputs/login-selection.json \
   --variables ./inputs/login-variables.json \
+  --allowed-variables ./inputs/figma/design-system-variables.json \
   --rules ./skills/figma-design-audit/rules/default-rules.json \
   --report-name login-journey
 ```
@@ -60,3 +61,13 @@ npm run figma:fetch -- \
 ```
 
 Then run audit with generated files.
+
+If only your design-system library is allowed, pass that variables file as an allow-list:
+
+```bash
+npm run figma:audit -- \
+  --selection ./inputs/figma/dashboard-selection.json \
+  --variables ./inputs/figma/dashboard-variables.json \
+  --allowed-variables ./inputs/figma/design-system-variables.json \
+  --report-name dashboard
+```

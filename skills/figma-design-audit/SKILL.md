@@ -58,6 +58,7 @@ This generates selection/variables JSON files compatible with `npm run figma:aud
 npm run figma:audit -- \
   --selection ./inputs/login-selection.json \
   --variables ./inputs/login-variables.json \
+  --allowed-variables ./inputs/figma/design-system-variables.json \
   --rules ./skills/figma-design-audit/rules/default-rules.json \
   --output-dir ./reports/figma-audit \
   --report-name login-journey
@@ -79,6 +80,11 @@ npm run figma:audit -- --selection ./inputs/login-selection.json --no-ai
   - before/after fix snippets
   - optional AI remediation priorities
 - `*.figjam.md` FigJam-ready paste pack
+
+If your policy allows only one library, `--allowed-variables` enforces an allow-list.
+Any variable refs outside the allow-list are reported as:
+
+- `external_variable_reference`
 
 To publish in FigJam quickly:
 

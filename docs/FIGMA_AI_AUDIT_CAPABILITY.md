@@ -96,6 +96,7 @@ npm run figma:fetch -- \
 npm run figma:audit -- \
   --selection ./inputs/login-selection.json \
   --variables ./inputs/login-variables.json \
+  --allowed-variables ./inputs/figma/design-system-variables.json \
   --rules ./skills/figma-design-audit/rules/default-rules.json \
   --report-name login-journey
 ```
@@ -124,6 +125,10 @@ Markdown includes:
 - detailed violations table
 - before/after fix snippets
 - optional AI remediation summary
+
+When `--allowed-variables` is provided, the report also flags:
+
+- `external_variable_reference` for any variable/token outside the approved library.
 
 FigJam paste pack includes:
 
