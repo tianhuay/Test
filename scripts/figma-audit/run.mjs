@@ -568,6 +568,9 @@ function extractBoundVariables(nodeRaw) {
     }
 
     Object.entries(value).forEach(([key, nested]) => {
+      if (key === "children") {
+        return;
+      }
       const nextPath = keyPath ? `${keyPath}.${key}` : key;
       if (key === "boundVariables" && isObject(nested)) {
         Object.entries(nested).forEach(([property, reference]) => {
@@ -610,6 +613,9 @@ function extractNumericProperties(rawNode, keyPattern) {
     }
 
     Object.entries(value).forEach(([key, nested]) => {
+      if (key === "children") {
+        return;
+      }
       const nextPath = keyPath ? `${keyPath}.${key}` : key;
       if (typeof nested === "number" && Number.isFinite(nested) && keyPattern.test(key)) {
         const dedupeKey = `${nextPath}|${nested}`;
@@ -678,6 +684,9 @@ function extractColors(rawNode) {
     }
 
     Object.entries(value).forEach(([key, nested]) => {
+      if (key === "children") {
+        return;
+      }
       const nextPath = keyPath ? `${keyPath}.${key}` : key;
       const lowerKey = key.toLowerCase();
 
@@ -766,6 +775,9 @@ function extractTypography(rawNode) {
     }
 
     Object.entries(value).forEach(([key, nested]) => {
+      if (key === "children") {
+        return;
+      }
       const nextPath = keyPath ? `${keyPath}.${key}` : key;
       walk(nested, nextPath);
     });
@@ -818,6 +830,9 @@ function extractBounds(rawNode) {
     pushBounds(keyPath || "bounds", value);
 
     Object.entries(value).forEach(([key, nested]) => {
+      if (key === "children") {
+        return;
+      }
       const nextPath = keyPath ? `${keyPath}.${key}` : key;
       walk(nested, nextPath);
     });
