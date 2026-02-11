@@ -99,3 +99,26 @@ Current workflow:
 3. Paste sections into FigJam frames (Summary, Critical+High, Medium+Low, Backlog).
 
 This gives a fast repeatable publishing flow until direct write APIs are available.
+
+## 8) If you cannot run Cursor app due IT policy
+
+You can bypass MCP and fetch directly via Figma REST API from this repo:
+
+```bash
+export FIGMA_ACCESS_TOKEN=your_figma_pat
+npm run figma:fetch -- \
+  --figma-link "https://www.figma.com/design/<fileKey>/<name>?node-id=5-1229" \
+  --out-dir ./inputs/figma \
+  --prefix dashboard
+```
+
+Then run:
+
+```bash
+npm run figma:audit -- \
+  --selection ./inputs/figma/dashboard-selection.json \
+  --variables ./inputs/figma/dashboard-variables.json \
+  --report-name dashboard
+```
+
+If your workspace blocks PAT sharing, ask your design ops team to provide exported JSON files from a secure runner.

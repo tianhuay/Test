@@ -46,3 +46,17 @@ See:
 - `docs/FIGMA_AI_AUDIT_CAPABILITY.md`
 - `docs/REMOTE_MCP_HANDOFF.md`
 - `skills/figma-design-audit/SKILL.md`
+
+### If you cannot use an MCP client (IT restriction)
+
+Use Figma REST fetch helper:
+
+```bash
+export FIGMA_ACCESS_TOKEN=your_figma_pat
+npm run figma:fetch -- \
+  --figma-link "https://www.figma.com/design/<fileKey>/<name>?node-id=5-1229" \
+  --out-dir ./inputs/figma \
+  --prefix dashboard
+```
+
+Then run audit with generated files.

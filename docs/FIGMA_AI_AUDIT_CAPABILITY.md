@@ -64,6 +64,16 @@ Use when MCP is unavailable in your environment:
 
 This fallback preserves the same report format but requires API token management and scheduled exports.
 
+Helper command included in this repo:
+
+```bash
+export FIGMA_ACCESS_TOKEN=your_figma_pat
+npm run figma:fetch -- \
+  --figma-link "https://www.figma.com/design/<fileKey>/<name>?node-id=5-1229" \
+  --out-dir ./inputs/figma \
+  --prefix dashboard
+```
+
 ## Recommended operating model
 
 1. **Per journey run**

@@ -38,6 +38,20 @@ Use:
 
 Desktop mode supports selection-driven workflows from your active Figma selection.
 
+### No MCP client available (IT restriction fallback)
+
+Use Figma REST helper in this repo:
+
+```bash
+export FIGMA_ACCESS_TOKEN=your_figma_pat
+npm run figma:fetch -- \
+  --figma-link "https://www.figma.com/design/<fileKey>/<name>?node-id=5-1229" \
+  --out-dir ./inputs/figma \
+  --prefix dashboard
+```
+
+This generates selection/variables JSON files compatible with `npm run figma:audit`.
+
 ## Audit command
 
 ```bash
