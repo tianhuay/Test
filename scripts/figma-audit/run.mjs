@@ -1882,9 +1882,10 @@ async function main() {
 
   const variablesFromSelection = collectVariables(selectionPayload);
   const variablesFromSource = variablesPayload ? collectVariables(variablesPayload) : [];
+  const variablesFromAllowed = allowedVariablesPayload ? collectVariables(allowedVariablesPayload) : [];
   const mergedVariablesMap = new Map();
 
-  [...variablesFromSelection, ...variablesFromSource].forEach((variable) => {
+  [...variablesFromSelection, ...variablesFromSource, ...variablesFromAllowed].forEach((variable) => {
     const key = variable.id ?? variable.name;
     if (key) {
       mergedVariablesMap.set(key, variable);
