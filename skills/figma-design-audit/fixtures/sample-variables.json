@@ -1,0 +1,33 @@
+{
+  "variables": [
+    {
+      "id": "var-spacing-2",
+      "name": "spacing/2",
+      "resolvedType": "FLOAT",
+      "valuesByMode": {
+        "mode:default": 8
+      }
+    },
+    {
+      "id": "var-radius-sm",
+      "name": "radius/sm",
+      "resolvedType": "FLOAT",
+      "valuesByMode": {
+        "mode:default": 4
+      }
+    },
+    {
+      "id": "var-color-brand-primary",
+      "name": "color/brand/primary",
+      "resolvedType": "COLOR",
+      "valuesByMode": {
+        "mode:default": {
+          "r": 0,
+          "g": 0.231372549,
+          "b": 0.584313725,
+          "a": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "document": {
+    "id": "0:1",
+    "name": "Customer Login Journey",
+    "type": "FRAME",
+    "x": 0,
+    "y": 0,
+    "width": 1440,
+    "height": 1024,
+    "children": [
+      {
+        "id": "1:1",
+        "name": "Login Screen",
+        "type": "FRAME",
+        "x": 3,
+        "y": 5,
+        "width": 375,
+        "height": 812,
+        "layoutMode": "VERTICAL",
+        "itemSpacing": 10,
+        "paddingTop": 14,
+        "paddingLeft": 15,
+        "cornerRadius": 5,
+        "boundVariables": {
+          "itemSpacing": {
+            "id": "var-spacing-2"
+          }
+        },
+        "fills": [
+          {
+            "type": "SOLID",
+            "color": {
+              "r": 0.88,
+              "g": 0.1,
+              "b": 0.1,
+              "a": 1
+            }
+          }
+        ],
+        "children": [
+          {
+            "id": "2:1",
+            "name": "Welcome text",
+            "type": "TEXT",
+            "fontFamily": "Arial",
+            "fontSize": 15,
+            "fontWeight": 550,
+            "lineHeightPx": 21,
+            "fills": [
+              {
+                "type": "SOLID",
+                "color": {
+                  "r": 0.12,
+                  "g": 0.12,
+                  "b": 0.12,
+                  "a": 1
+                }
+              }
+            ]
+          },
+          {
+            "id": "2:2",
+            "name": "Sign in button",
+            "type": "RECTANGLE",
+            "cornerRadius": 6,
+            "paddingLeft": 18,
+            "boundVariables": {
+              "cornerRadius": {
+                "id": "var-radius-sm"
+              }
+            },
+            "fills": [
+              {
+                "type": "SOLID",
+                "color": {
+                  "r": 0.02,
+                  "g": 0.32,
+                  "b": 0.9,
+                  "a": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
